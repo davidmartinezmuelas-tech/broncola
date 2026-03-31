@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Broncola - El juego de mesa de bebida para el grupo">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Broncola">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>Broncola</title>
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    /* PWA Splash Screen */
+    #splash {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #08141A 0%, #1E102E 50%, #1A0C0D 100%);
+      transition: opacity 0.5s ease;
+    }
+    #splash.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #splash img {
+      width: 140px;
+      height: 140px;
+      animation: splashPulse 1.4s ease-in-out infinite;
+    }
+    #splash-title {
+      margin-top: 20px;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: 6px;
+    }
+    #splash-sub {
+      margin-top: 8px;
+      color: rgba(255,255,255,0.5);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 13px;
+    }
+    @keyframes splashPulse {
+      0%   { transform: scale(1);    opacity: 1; }
+      50%  { transform: scale(1.08); opacity: 0.85; }
+      100% { transform: scale(1);    opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Splash screen shown while Flutter loads -->
+  <div id="splash">
+    <img src="icons/Icon-192.png" alt="Broncola logo" />
+    <div id="splash-title">BRONCOLA</div>
+    <div id="splash-sub">Cargando...</div>
+  </div>
+
+  <script>
+    // Hide splash once Flutter renders its first frame
+    window.addEventListener('flutter-first-frame', function () {
+      var splash = document.getElementById('splash');
+      if (splash) {
+        splash.classList.add('hidden');
+        setTimeout(function() { splash.remove(); }, 600);
+      }
+    });
+  </script>
+
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

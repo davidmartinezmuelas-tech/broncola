@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "broncola-web",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["C:\\Users\\muela\\OneDrive\\Escritorio\\Broncola\\serve.py"],
+      "autoPort": true
+    }
+  ]
+}
