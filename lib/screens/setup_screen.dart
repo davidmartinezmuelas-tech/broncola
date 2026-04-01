@@ -21,7 +21,6 @@ class SetupScreen extends StatefulWidget {
 
 class _SetupScreenState extends State<SetupScreen> {
   int _playerCount = 2;
-  int _boardLength = 50;
   GameMode _mode = GameMode.light;
   final List<TextEditingController> _controllers = [];
   final List<Uint8List?> _avatars = [];
@@ -129,7 +128,6 @@ class _SetupScreenState extends State<SetupScreen> {
       (i) => Player(name: _controllers[i].text.trim(), color: _colorForIndex(i), avatarBytes: _avatars[i]),
     );
     final setup = GameSetup(
-      boardLength: _boardLength,
       customTileTexts: _customTileControllers.map((controller) => controller.text.trim()).where((text) => text.isNotEmpty).toList(),
       selectedPacks: _selectedPacks.toList(),
     );
@@ -194,13 +192,6 @@ class _SetupScreenState extends State<SetupScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              _sectionLabel('Duración del tablero'),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 10,
-                children: [50, 75, 100].map((length) => _lengthChip(length)).toList(),
-              ),
-              const SizedBox(height: 24),
               _sectionLabel('Jugadores'),
               const SizedBox(height: 12),
               ...List.generate(_playerCount, _playerRow),
@@ -210,7 +201,7 @@ class _SetupScreenState extends State<SetupScreen> {
                 _sectionLabel('Packs de contenido'),
                 const SizedBox(height: 6),
                 const Text(
-                  'Activa los packs que quieras incluir en esta partida. Sus preguntas tendrán prioridad en el tablero.',
+                  'Activa los packs que quieras incluir en esta partida. Sus preguntas se mezclan con el mazo.',
                   style: TextStyle(color: Colors.white54, fontSize: 12),
                 ),
                 const SizedBox(height: 12),
@@ -348,19 +339,6 @@ class _SetupScreenState extends State<SetupScreen> {
           ),
         );
       }).toList(),
-    );
-  }
-
-  Widget _lengthChip(int length) {
-    final selected = _boardLength == length;
-    return ChoiceChip(
-      selected: selected,
-      label: Text('$length casillas'),
-      onSelected: (_) => setState(() => _boardLength = length),
-      backgroundColor: Colors.black26,
-      selectedColor: _palette.accent.withOpacity(0.22),
-      labelStyle: TextStyle(color: selected ? _palette.accentSoft : Colors.white),
-      side: BorderSide(color: selected ? _palette.accent : Colors.white24),
     );
   }
 

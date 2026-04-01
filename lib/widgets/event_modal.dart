@@ -98,7 +98,7 @@ class EventModal extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-                child: Text(isRollAgain ? '🎲  Volver a tirar' : 'Siguiente turno', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                child: Text(isRollAgain ? '🃏  Robar otra carta' : 'Siguiente turno', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ),
           ],

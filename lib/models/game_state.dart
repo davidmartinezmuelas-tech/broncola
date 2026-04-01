@@ -10,13 +10,10 @@ class GameState {
   final GameMode gameMode;
   final GameSetup setup;
   int currentPlayerIndex;
-  int? lastDiceRoll;
-  bool waitingForNextTurn;
-  bool isGameOver;
   int turnCount;
   final List<ActiveRule> activeRules;
   final List<GameLogEntry> logEntries;
-  final Map<TileType, List<Tile>> dynamicPool;
+  List<Tile> deck;
 
   static const int maxRules = 4;
 
@@ -25,23 +22,18 @@ class GameState {
     required this.gameMode,
     required this.setup,
     this.currentPlayerIndex = 0,
-    this.lastDiceRoll,
-    this.waitingForNextTurn = false,
-    this.isGameOver = false,
     this.turnCount = 0,
     List<ActiveRule>? activeRules,
     List<GameLogEntry>? logEntries,
-    Map<TileType, List<Tile>>? dynamicPool,
+    List<Tile>? deck,
   })  : activeRules = activeRules ?? [],
         logEntries = logEntries ?? [],
-        dynamicPool = dynamicPool ?? {};
+        deck = deck ?? [];
 
   Player get currentPlayer => players[currentPlayerIndex];
 
   void advanceTurn() {
     currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
-    lastDiceRoll = null;
-    waitingForNextTurn = false;
     turnCount++;
   }
 

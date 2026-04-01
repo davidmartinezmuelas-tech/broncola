@@ -54,7 +54,7 @@ class PlayerListWidget extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'Casilla ${player.position + 1}',
+                      '${player.drinksConsumed} 🍺',
                       style:
                           const TextStyle(color: Colors.white38, fontSize: 12),
                     ),

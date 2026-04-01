@@ -133,9 +133,7 @@ class _BoardWidgetState extends State<BoardWidget> {
                       tileSize: _tileSize,
                       gap: _gap,
                       focused: i == widget.focusedPosition,
-                      players: widget.players
-                          .where((player) => player.position == i)
-                          .toList(),
+                      players: const [],
                       accentColor: widget.accentColor,
                     ),
                 ],
