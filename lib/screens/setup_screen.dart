@@ -154,14 +154,16 @@ class _SetupScreenState extends State<SetupScreen> {
           ),
         ],
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: _palette.gradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
-        ),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(20),
+      body: SafeArea(
+        top: false,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: _palette.gradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
+          ),
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
             children: [
               _sectionLabel('Modo de juego'),
               const SizedBox(height: 12),
@@ -245,6 +247,7 @@ class _SetupScreenState extends State<SetupScreen> {
                 ),
               ),
             ],
+            ),
           ),
         ),
       ),
@@ -494,4 +497,4 @@ class _SetupScreenState extends State<SetupScreen> {
   Widget _sectionLabel(String text) {
     return Text(text, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w700, letterSpacing: 1));
   }
-}
+}

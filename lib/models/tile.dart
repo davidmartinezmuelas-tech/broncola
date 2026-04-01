@@ -28,6 +28,28 @@ class Tile {
     this.pack = ContentPack.base,
   });
 
+  Tile copyWith({
+    int? id,
+    TileType? type,
+    String? text,
+    GameMode? mode,
+    TileCategory? category,
+    SpecialTileEffect? specialEffect,
+    bool? isCustom,
+    ContentPack? pack,
+  }) {
+    return Tile(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      text: text ?? this.text,
+      mode: mode ?? this.mode,
+      category: category ?? this.category,
+      specialEffect: specialEffect ?? this.specialEffect,
+      isCustom: isCustom ?? this.isCustom,
+      pack: pack ?? this.pack,
+    );
+  }
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'type': type.name,

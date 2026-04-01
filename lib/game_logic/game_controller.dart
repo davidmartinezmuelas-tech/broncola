@@ -35,7 +35,13 @@ class GameController {
       customTileTexts: setup.customTileTexts,
       selectedPacks: setup.selectedPacks,
     );
-    state = GameState(players: players, gameMode: mode, setup: setup);
+    final dynamicPool = BoardBuilder.buildDynamicPool(mode, setup.selectedPacks);
+    state = GameState(
+      players: players, 
+      gameMode: mode, 
+      setup: setup,
+      dynamicPool: dynamicPool,
+    );
     state.addLog(
       GameLogEntry(
         title: 'Partida creada',
@@ -101,7 +107,29 @@ class GameController {
 
   TileActionResult resolveCurrentTile({Player? selectedPlayer}) {
     final player = state.currentPlayer;
-    final tile = currentTile;
+    var tile = currentTile;
+
+    // --- Dynamic tile replacement ---
+    if (tile.type != TileType.finale && tile.type != TileType.special && !tile.isCustom && tile.type != TileType.rule) {
+      var pool = state.dynamicPool[tile.type];
+      if (pool == null || pool.isEmpty) {
+        final freshPool = BoardBuilder.buildDynamicPool(state.gameMode, state.setup.selectedPacks);
+        pool = freshPool[tile.type] ?? [];
+        state.dynamicPool[tile.type] = pool;
+      }
+      
+      if (pool.isNotEmpty) {
+        final newTextTile = pool.removeLast();
+        tile = tile.copyWith(
+          text: newTextTile.text,
+          category: newTextTile.category,
+          mode: newTextTile.mode,
+          pack: newTextTile.pack,
+        );
+        _tiles[player.position] = tile;
+      }
+    }
+    // --------------------------------
 
     if (tile.type == TileType.finale) {
       state.isGameOver = true;
@@ -110,7 +138,6 @@ class GameController {
       return TileActionResult(summary: summary);
     }
 
-    // Same-tile penalty: other players already on this tile drink 2 extra
     String penaltyNote = '';
     if (tile.type != TileType.finale) {
       final cohabitants = state.players.where((p) => p != player && p.position == player.position).toList();
@@ -125,31 +152,31 @@ class GameController {
     }
 
     if (tile.type == TileType.wildcard) {
-      final summary = '${player.name} cayó en un comodín.$penaltyNote';
+      final summary = '${player.name} cayó en la casilla ${player.position + 1}. ${tile.text}$penaltyNote';
       logEvent('Comodín', summary);
-      return TileActionResult(summary: summary);
+      return TileActionResult(summary: penaltyNote.trim());
     }
 
     if (tile.type != TileType.special) {
       final summary = '${player.name} cayó en la casilla ${player.position + 1}. ${tile.text}$penaltyNote';
       logEvent('Turno de ${player.name}', summary);
-      return TileActionResult(summary: summary);
+      return TileActionResult(summary: penaltyNote.trim());
     }
 
     switch (tile.specialEffect) {
       case SpecialTileEffect.rollAgain:
-        final summary = '${player.name} vuelve a tirar el dado.$penaltyNote';
+        final summary = '${player.name} activa la casilla ${player.position + 1} y vuelve a tirar el dado.$penaltyNote';
         logEvent('Casilla especial', summary);
-        return TileActionResult(summary: summary, shouldRollAgain: true);
+        return TileActionResult(summary: penaltyNote.trim(), shouldRollAgain: true);
       case SpecialTileEffect.moveBack3:
-        final summary = '${player.name} activa una casilla especial y retrocede 3 casillas.$penaltyNote';
+        final summary = '${player.name} activa la casilla ${player.position + 1} y retrocede 3 casillas.$penaltyNote';
         logEvent('Casilla especial', summary);
-        return TileActionResult(summary: 'Retrocede 3 casillas.$penaltyNote', movementDelta: -3);
+        return TileActionResult(summary: penaltyNote.trim(), movementDelta: -3);
       case SpecialTileEffect.moveForwardByLastRoll:
         final extra = state.lastDiceRoll ?? 0;
-        final summary = '${player.name} duplica el movimiento y avanza $extra casillas extra.$penaltyNote';
+        final summary = '${player.name} activa la casilla ${player.position + 1} y avanza $extra casillas extra.$penaltyNote';
         logEvent('Casilla especial', summary);
-        return TileActionResult(summary: summary, movementDelta: extra);
+        return TileActionResult(summary: penaltyNote.trim(), movementDelta: extra);
       case SpecialTileEffect.swapWithPlayer:
         if (selectedPlayer == null) {
           return const TileActionResult(
@@ -162,15 +189,14 @@ class GameController {
         selectedPlayer.position = oldPosition;
         final summary = '${player.name} intercambia posición con ${selectedPlayer.name}.$penaltyNote';
         logEvent('Casilla especial', summary);
-        return TileActionResult(summary: summary);
+        return TileActionResult(summary: penaltyNote.trim());
       case null:
-        final summary = '${player.name} cayó en una casilla especial.$penaltyNote';
+        final summary = '${player.name} cayó en la casilla especial ${player.position + 1}.$penaltyNote';
         logEvent('Casilla especial', summary);
-        return TileActionResult(summary: summary);
+        return TileActionResult(summary: penaltyNote.trim());
     }
   }
 
-  /// Resets state so the current player can roll again (used for rollAgain tiles).
   void resetForReroll() {
     state.waitingForNextTurn = false;
   }
@@ -201,4 +227,4 @@ class GameController {
   void nextTurn() {
     state.advanceTurn();
   }
-}
+}

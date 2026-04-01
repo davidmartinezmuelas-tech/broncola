@@ -3,6 +3,7 @@ import 'game_log_entry.dart';
 import 'game_mode.dart';
 import 'game_setup.dart';
 import 'player.dart';
+import 'tile.dart';
 
 class GameState {
   final List<Player> players;
@@ -15,6 +16,7 @@ class GameState {
   int turnCount;
   final List<ActiveRule> activeRules;
   final List<GameLogEntry> logEntries;
+  final Map<TileType, List<Tile>> dynamicPool;
 
   static const int maxRules = 4;
 
@@ -29,8 +31,10 @@ class GameState {
     this.turnCount = 0,
     List<ActiveRule>? activeRules,
     List<GameLogEntry>? logEntries,
+    Map<TileType, List<Tile>>? dynamicPool,
   })  : activeRules = activeRules ?? [],
-        logEntries = logEntries ?? [];
+        logEntries = logEntries ?? [],
+        dynamicPool = dynamicPool ?? {};
 
   Player get currentPlayer => players[currentPlayerIndex];
 

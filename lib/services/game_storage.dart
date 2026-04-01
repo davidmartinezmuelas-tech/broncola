@@ -41,6 +41,8 @@ class GameStorage {
         'turnCount': state.turnCount,
         'activeRules': state.activeRules.map((rule) => rule.toJson()).toList(),
         'logEntries': state.logEntries.map((entry) => entry.toJson()).toList(),
+        'dynamicPool': Map.fromEntries(state.dynamicPool.entries.map((e) =>
+            MapEntry(e.key.name, e.value.map((t) => t.toJson()).toList()))),
       },
       'tiles': tiles.map((tile) => tile.toJson()).toList(),
     });
@@ -65,6 +67,20 @@ class GameStorage {
     final logEntries = (stateJson['logEntries'] as List<dynamic>? ?? const [])
         .map((item) => GameLogEntry.fromJson(item as Map<String, dynamic>))
         .toList();
+    
+    final poolJson = stateJson['dynamicPool'] as Map<String, dynamic>? ?? {};
+    final dynamicPool = <TileType, List<Tile>>{};
+    for (final entry in poolJson.entries) {
+      final type = TileType.values.firstWhere(
+        (t) => t.name == entry.key,
+        orElse: () => TileType.social,
+      );
+      final list = (entry.value as List<dynamic>? ?? [])
+          .map((item) => Tile.fromJson(item as Map<String, dynamic>))
+          .toList();
+      dynamicPool[type] = list;
+    }
+
     final tiles = tilesJson
         .map((item) => Tile.fromJson(item as Map<String, dynamic>))
         .toList();
@@ -88,6 +104,7 @@ class GameStorage {
         turnCount: stateJson['turnCount'] as int? ?? 0,
         activeRules: activeRules,
         logEntries: logEntries,
+        dynamicPool: dynamicPool,
       ),
       tiles: tiles,
     );

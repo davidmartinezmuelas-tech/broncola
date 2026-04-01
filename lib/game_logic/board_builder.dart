@@ -64,6 +64,30 @@ class BoardBuilder {
     ];
   }
 
+  /// Generates a shuffled pool for each TileType based on the game mode and selected packs.
+  static Map<TileType, List<Tile>> buildDynamicPool(GameMode mode, List<ContentPack> selectedPacks) {
+    final rng = Random();
+    final allBase = _basePoolFor(mode);
+    final allPack = _packTilesFor(mode, selectedPacks);
+
+    final allValid = [...allBase, ...allPack];
+
+    final Map<TileType, List<Tile>> pool = {};
+    for (var type in TileType.values) {
+      pool[type] = [];
+    }
+
+    for (final tile in allValid) {
+      pool[tile.type]!.add(tile);
+    }
+
+    for (var type in pool.keys) {
+      pool[type]!.shuffle(rng);
+    }
+
+    return pool;
+  }
+
   /// Tiles del catálogo base (ContentPack.base) según el modo de juego.
   static List<Tile> _basePoolFor(GameMode mode) {
     final access = UserAccessService.instance.access;
