@@ -196,7 +196,7 @@ class _SetupScreenState extends State<SetupScreen> {
               const SizedBox(height: 12),
               Wrap(
                 spacing: 10,
-                children: [50, 60, 70].map((length) => _lengthChip(length)).toList(),
+                children: [50, 75, 100].map((length) => _lengthChip(length)).toList(),
               ),
               const SizedBox(height: 24),
               _sectionLabel('Jugadores'),
