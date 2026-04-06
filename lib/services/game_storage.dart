@@ -21,6 +21,7 @@ class SavedGameData {
 class GameStorage {
   static const _savedGameKey = 'broncola_saved_game';
   static const _statsKey = 'broncola_stats';
+  static const _rosterKey = 'broncola_player_roster';
 
   Future<void> saveGame({required GameState state}) async {
     final prefs = await SharedPreferences.getInstance();
@@ -107,6 +108,44 @@ class GameStorage {
         .map((item) => GameSummary.fromJson(jsonDecode(item) as Map<String, dynamic>))
         .toList();
   }
+
+  // ── Player roster ──────────────────────────────────────────────────────────
+
+  Future<List<Player>> loadRoster() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_rosterKey);
+    if (raw == null || raw.isEmpty) return [];
+    try {
+      final list = jsonDecode(raw) as List<dynamic>;
+      return list.map((item) => _playerFromJson(item as Map<String, dynamic>)).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> _saveRoster(List<Player> players) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_rosterKey, jsonEncode(players.map(_playerToJson).toList()));
+  }
+
+  Future<void> upsertPlayerInRoster(Player player) async {
+    final roster = await loadRoster();
+    final idx = roster.indexWhere((p) => p.name.toLowerCase() == player.name.toLowerCase());
+    if (idx >= 0) {
+      roster[idx] = player;
+    } else {
+      roster.add(player);
+    }
+    await _saveRoster(roster);
+  }
+
+  Future<void> removePlayerFromRoster(String name) async {
+    final roster = await loadRoster();
+    roster.removeWhere((p) => p.name.toLowerCase() == name.toLowerCase());
+    await _saveRoster(roster);
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
 
   Map<String, dynamic> _playerToJson(Player player) => {
         'name': player.name,

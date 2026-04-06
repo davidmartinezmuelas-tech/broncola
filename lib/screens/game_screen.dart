@@ -488,7 +488,7 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _playerStrip(GameState state) {
     return SizedBox(
-      height: 76,
+      height: 96,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -502,39 +502,73 @@ class _GameScreenState extends State<GameScreen> {
   Widget _playerChip(Player player, bool isActive) {
     return Container(
       margin: const EdgeInsets.only(right: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
       decoration: BoxDecoration(
         color: isActive ? player.color.withOpacity(0.22) : _palette.panel.withOpacity(0.85),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: isActive ? player.color : Colors.white12, width: isActive ? 1.5 : 1),
       ),
-      child: Row(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          CircleAvatar(
-            radius: 14,
-            backgroundColor: player.color,
-            backgroundImage: player.avatarBytes != null ? MemoryImage(player.avatarBytes!) : null,
-            child: player.avatarBytes == null
-                ? Text(player.initials,
-                    style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold))
-                : null,
-          ),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
+          Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
+              CircleAvatar(
+                radius: 14,
+                backgroundColor: player.color,
+                backgroundImage: player.avatarBytes != null ? MemoryImage(player.avatarBytes!) : null,
+                child: player.avatarBytes == null
+                    ? Text(player.initials,
+                        style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold))
+                    : null,
+              ),
+              const SizedBox(width: 7),
               Text(player.name,
                   style: TextStyle(
                       color: isActive ? Colors.white : Colors.white70,
                       fontSize: 12,
                       fontWeight: isActive ? FontWeight.bold : FontWeight.normal)),
-              Text('${player.drinksConsumed} 🍺',
-                  style: const TextStyle(color: Colors.white54, fontSize: 11)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _chipDrinkButton(Icons.remove, () {
+                setState(() => _controller.adjustDrinks(player, -1));
+                _persistState();
+              }),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text('${player.drinksConsumed} 🍺',
+                    style: TextStyle(
+                        color: isActive ? Colors.white : Colors.white54,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold)),
+              ),
+              _chipDrinkButton(Icons.add, () {
+                setState(() => _controller.adjustDrinks(player, 1));
+                _persistState();
+              }),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _chipDrinkButton(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 24,
+        height: 24,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, size: 14, color: Colors.white70),
       ),
     );
   }
