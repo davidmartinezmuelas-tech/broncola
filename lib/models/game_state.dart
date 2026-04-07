@@ -3,18 +3,17 @@ import 'game_log_entry.dart';
 import 'game_mode.dart';
 import 'game_setup.dart';
 import 'player.dart';
+import 'tile.dart';
 
 class GameState {
   final List<Player> players;
   final GameMode gameMode;
   final GameSetup setup;
   int currentPlayerIndex;
-  int? lastDiceRoll;
-  bool waitingForNextTurn;
-  bool isGameOver;
   int turnCount;
   final List<ActiveRule> activeRules;
   final List<GameLogEntry> logEntries;
+  List<Tile> deck;
 
   static const int maxRules = 4;
 
@@ -23,29 +22,28 @@ class GameState {
     required this.gameMode,
     required this.setup,
     this.currentPlayerIndex = 0,
-    this.lastDiceRoll,
-    this.waitingForNextTurn = false,
-    this.isGameOver = false,
     this.turnCount = 0,
     List<ActiveRule>? activeRules,
     List<GameLogEntry>? logEntries,
+    List<Tile>? deck,
   })  : activeRules = activeRules ?? [],
-        logEntries = logEntries ?? [];
+        logEntries = logEntries ?? [],
+        deck = deck ?? [];
 
   Player get currentPlayer => players[currentPlayerIndex];
 
   void advanceTurn() {
     currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
-    lastDiceRoll = null;
-    waitingForNextTurn = false;
     turnCount++;
   }
 
-  void addRule(ActiveRule rule) {
+  ActiveRule? addRule(ActiveRule rule) {
+    ActiveRule? discarded;
     if (activeRules.length >= maxRules) {
-      activeRules.removeAt(0);
+      discarded = activeRules.removeAt(0);
     }
     activeRules.add(rule);
+    return discarded;
   }
 
   void addLog(GameLogEntry entry) {

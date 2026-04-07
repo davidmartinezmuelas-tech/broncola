@@ -3,7 +3,7 @@ import 'game_mode.dart';
 
 enum TileType { drink, groupDrink, social, rule, chaos, special, wildcard, finale }
 
-enum TileCategory { truth, dare, neverHaveIEver, actOut, custom }
+enum TileCategory { truth, dare, neverHaveIEver, actOut, whoIsMostLikely, custom }
 
 enum SpecialTileEffect { moveBack3, moveForwardByLastRoll, swapWithPlayer, rollAgain }
 
@@ -27,6 +27,28 @@ class Tile {
     this.isCustom = false,
     this.pack = ContentPack.base,
   });
+
+  Tile copyWith({
+    int? id,
+    TileType? type,
+    String? text,
+    GameMode? mode,
+    TileCategory? category,
+    SpecialTileEffect? specialEffect,
+    bool? isCustom,
+    ContentPack? pack,
+  }) {
+    return Tile(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      text: text ?? this.text,
+      mode: mode ?? this.mode,
+      category: category ?? this.category,
+      specialEffect: specialEffect ?? this.specialEffect,
+      isCustom: isCustom ?? this.isCustom,
+      pack: pack ?? this.pack,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'id': id,

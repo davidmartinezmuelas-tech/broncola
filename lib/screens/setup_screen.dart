@@ -7,6 +7,7 @@ import '../models/content_pack.dart';
 import '../models/game_mode.dart';
 import '../models/game_setup.dart';
 import '../models/player.dart';
+import '../services/game_storage.dart';
 import '../services/user_access_service.dart';
 import '../theme/game_palette.dart';
 import 'spin_screen.dart';
@@ -21,7 +22,6 @@ class SetupScreen extends StatefulWidget {
 
 class _SetupScreenState extends State<SetupScreen> {
   int _playerCount = 2;
-  int _boardLength = 50;
   GameMode _mode = GameMode.light;
   final List<TextEditingController> _controllers = [];
   final List<Uint8List?> _avatars = [];
@@ -29,6 +29,8 @@ class _SetupScreenState extends State<SetupScreen> {
   final Set<ContentPack> _selectedPacks = {};
   final _formKey = GlobalKey<FormState>();
   final _picker = ImagePicker();
+  List<Player> _savedRoster = [];
+  final _storage = GameStorage();
 
   static const _privateBuild = bool.fromEnvironment('PRIVATE_PACK');
 
@@ -44,6 +46,12 @@ class _SetupScreenState extends State<SetupScreen> {
     super.initState();
     _rebuildControllers(2);
     _addCustomTileField();
+    _loadRoster();
+  }
+
+  Future<void> _loadRoster() async {
+    final roster = await _storage.loadRoster();
+    if (mounted) setState(() => _savedRoster = roster);
   }
 
   @override
@@ -83,11 +91,17 @@ class _SetupScreenState extends State<SetupScreen> {
     if (source == null) return;
 
     try {
-      final file = await _picker.pickImage(source: source, maxWidth: 400, maxHeight: 400, imageQuality: 85);
+      final file = await _picker.pickImage(source: source, maxWidth: 250, maxHeight: 250, imageQuality: 75);
       if (file == null) return;
       final bytes = await file.readAsBytes();
       setState(() => _avatars[index] = bytes);
-    } catch (_) {}
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo cargar la imagen. Inténtalo de nuevo.')),
+        );
+      }
+    }
   }
 
   Future<ImageSource?> _showSourcePicker() {
@@ -122,21 +136,77 @@ class _SetupScreenState extends State<SetupScreen> {
     _customTileControllers.add(TextEditingController());
   }
 
-  void _start() {
+  Future<void> _start() async {
     if (!_formKey.currentState!.validate()) return;
     final players = List.generate(
       _playerCount,
       (i) => Player(name: _controllers[i].text.trim(), color: _colorForIndex(i), avatarBytes: _avatars[i]),
     );
+    // Auto-save all players to the persistent roster
+    for (final player in players) {
+      await _storage.upsertPlayerInRoster(player);
+    }
     final setup = GameSetup(
-      boardLength: _boardLength,
       customTileTexts: _customTileControllers.map((controller) => controller.text.trim()).where((text) => text.isNotEmpty).toList(),
       selectedPacks: _selectedPacks.toList(),
     );
+    if (!mounted) return;
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => SpinScreen(players: players, gameMode: _mode, setup: setup)),
     );
+  }
+
+  void _addSavedPlayerToGame(Player saved) {
+    final emptyIdx = _controllers.indexWhere((c) => c.text.trim().isEmpty);
+    if (emptyIdx >= 0) {
+      setState(() {
+        _controllers[emptyIdx].text = saved.name;
+        _avatars[emptyIdx] = saved.avatarBytes;
+      });
+    } else {
+      setState(() {
+        _playerCount++;
+        _controllers.add(TextEditingController(text: saved.name));
+        _avatars.add(saved.avatarBytes);
+      });
+    }
+  }
+
+  void _removePlayerRow(int index) {
+    setState(() {
+      _controllers.removeAt(index).dispose();
+      _avatars.removeAt(index);
+      _playerCount = _controllers.length;
+    });
+  }
+
+  Future<void> _confirmRemoveFromRoster(Player player) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: _palette.panel,
+        title: const Text('Quitar jugador guardado', style: TextStyle(color: Colors.white)),
+        content: Text(
+          '¿Eliminar a ${player.name} de los jugadores guardados?',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Eliminar', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) {
+      await _storage.removePlayerFromRoster(player.name);
+      if (mounted) setState(() => _savedRoster.removeWhere((p) => p.name == player.name));
+    }
   }
 
   @override
@@ -154,61 +224,63 @@ class _SetupScreenState extends State<SetupScreen> {
           ),
         ],
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: _palette.gradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
-        ),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(20),
+      body: SafeArea(
+        top: false,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: _palette.gradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
+          ),
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
             children: [
               _sectionLabel('Modo de juego'),
               const SizedBox(height: 12),
               _modeSelector(),
               const SizedBox(height: 24),
-              _sectionLabel('Número de jugadores'),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _counterButton(Icons.remove, () {
-                    if (_playerCount > 2) {
-                      setState(() {
-                        _playerCount--;
-                        _rebuildControllers(_playerCount);
-                      });
-                    }
-                  }),
-                  const SizedBox(width: 18),
-                  Text('$_playerCount', style: const TextStyle(color: Colors.white, fontSize: 34, fontWeight: FontWeight.bold)),
-                  const SizedBox(width: 18),
-                  _counterButton(Icons.add, () {
-                    setState(() {
-                      _playerCount++;
-                      _rebuildControllers(_playerCount);
-                    });
-                  }),
-                ],
-              ),
-              const SizedBox(height: 24),
-              _sectionLabel('Duración del tablero'),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 10,
-                children: [50, 75, 100].map((length) => _lengthChip(length)).toList(),
-              ),
-              const SizedBox(height: 24),
+              if (_savedRoster.isNotEmpty) ...[
+                _sectionLabel('Jugadores guardados'),
+                const SizedBox(height: 6),
+                const Text(
+                  'Toca para añadir · Mantén para eliminar',
+                  style: TextStyle(color: Colors.white38, fontSize: 11),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 74,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _savedRoster.length,
+                    itemBuilder: (_, i) => _savedPlayerChip(_savedRoster[i]),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
               _sectionLabel('Jugadores'),
               const SizedBox(height: 12),
               ...List.generate(_playerCount, _playerRow),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _playerCount++;
+                      _controllers.add(TextEditingController());
+                      _avatars.add(null);
+                    });
+                  },
+                  icon: const Icon(Icons.person_add, color: Colors.white54),
+                  label: const Text('Añadir jugador', style: TextStyle(color: Colors.white54)),
+                ),
+              ),
               const SizedBox(height: 20),
               if (_availablePacks.isNotEmpty) ...[
                 const SizedBox(height: 24),
                 _sectionLabel('Packs de contenido'),
                 const SizedBox(height: 6),
                 const Text(
-                  'Activa los packs que quieras incluir en esta partida. Sus preguntas tendrán prioridad en el tablero.',
+                  'Activa los packs que quieras incluir en esta partida. Sus preguntas se mezclan con el mazo.',
                   style: TextStyle(color: Colors.white54, fontSize: 12),
                 ),
                 const SizedBox(height: 12),
@@ -245,6 +317,7 @@ class _SetupScreenState extends State<SetupScreen> {
                 ),
               ),
             ],
+            ),
           ),
         ),
       ),
@@ -279,6 +352,52 @@ class _SetupScreenState extends State<SetupScreen> {
     });
   }
 
+  Widget _savedPlayerChip(Player player) {
+    return GestureDetector(
+      onTap: () => _addSavedPlayerToGame(player),
+      onLongPress: () => _confirmRemoveFromRoster(player),
+      child: Container(
+        margin: const EdgeInsets.only(right: 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: player.color,
+                  backgroundImage: player.avatarBytes != null ? MemoryImage(player.avatarBytes!) : null,
+                  child: player.avatarBytes == null
+                      ? Text(player.initials, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold))
+                      : null,
+                ),
+                Positioned(
+                  top: -4,
+                  right: -4,
+                  child: GestureDetector(
+                    onTap: () => _confirmRemoveFromRoster(player),
+                    child: Container(
+                      width: 18,
+                      height: 18,
+                      decoration: BoxDecoration(color: Colors.red.shade800, shape: BoxShape.circle, border: Border.all(color: Colors.black26)),
+                      child: const Icon(Icons.close, color: Colors.white, size: 11),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 5),
+            Text(
+              player.name.length > 8 ? '${player.name.substring(0, 7)}…' : player.name,
+              style: const TextStyle(color: Colors.white70, fontSize: 11),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _playerRow(int index) {
     final color = _colorForIndex(index);
     final hasAvatar = _avatars[index] != null;
@@ -304,6 +423,12 @@ class _SetupScreenState extends State<SetupScreen> {
               validator: (value) => value == null || value.trim().isEmpty ? 'Introduce un nombre' : null,
             ),
           ),
+          if (_playerCount > 2)
+            IconButton(
+              onPressed: () => _removePlayerRow(index),
+              icon: const Icon(Icons.person_remove_outlined, color: Colors.white38, size: 20),
+              tooltip: 'Quitar jugador',
+            ),
         ],
       ),
     );
@@ -348,19 +473,6 @@ class _SetupScreenState extends State<SetupScreen> {
     );
   }
 
-  Widget _lengthChip(int length) {
-    final selected = _boardLength == length;
-    return ChoiceChip(
-      selected: selected,
-      label: Text('$length casillas'),
-      onSelected: (_) => setState(() => _boardLength = length),
-      backgroundColor: Colors.black26,
-      selectedColor: _palette.accent.withOpacity(0.22),
-      labelStyle: TextStyle(color: selected ? _palette.accentSoft : Colors.white),
-      side: BorderSide(color: selected ? _palette.accent : Colors.white24),
-    );
-  }
-
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(
       labelText: label,
@@ -369,19 +481,6 @@ class _SetupScreenState extends State<SetupScreen> {
       fillColor: Colors.black26,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: _palette.accent, width: 2)),
-    );
-  }
-
-  Widget _counterButton(IconData icon, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(12), border: Border.all(color: _palette.accent)),
-        child: Icon(icon, color: _palette.accentSoft),
-      ),
     );
   }
 
@@ -494,4 +593,4 @@ class _SetupScreenState extends State<SetupScreen> {
   Widget _sectionLabel(String text) {
     return Text(text, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w700, letterSpacing: 1));
   }
-}
+}

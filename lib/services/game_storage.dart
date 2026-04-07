@@ -9,40 +9,29 @@ import '../models/game_log_entry.dart';
 import '../models/game_mode.dart';
 import '../models/game_setup.dart';
 import '../models/game_state.dart';
-import '../models/game_summary.dart';
 import '../models/player.dart';
 import '../models/tile.dart';
 
 class SavedGameData {
   final GameState state;
-  final List<Tile> tiles;
-
-  const SavedGameData({required this.state, required this.tiles});
+  const SavedGameData({required this.state});
 }
 
 class GameStorage {
   static const _savedGameKey = 'broncola_saved_game';
-  static const _statsKey = 'broncola_stats';
+  static const _rosterKey = 'broncola_player_roster';
 
-  Future<void> saveGame({
-    required GameState state,
-    required List<Tile> tiles,
-  }) async {
+  Future<void> saveGame({required GameState state}) async {
     final prefs = await SharedPreferences.getInstance();
     final payload = jsonEncode({
-      'state': {
-        'players': state.players.map(_playerToJson).toList(),
-        'gameMode': state.gameMode.name,
-        'setup': state.setup.toJson(),
-        'currentPlayerIndex': state.currentPlayerIndex,
-        'lastDiceRoll': state.lastDiceRoll,
-        'waitingForNextTurn': state.waitingForNextTurn,
-        'isGameOver': state.isGameOver,
-        'turnCount': state.turnCount,
-        'activeRules': state.activeRules.map((rule) => rule.toJson()).toList(),
-        'logEntries': state.logEntries.map((entry) => entry.toJson()).toList(),
-      },
-      'tiles': tiles.map((tile) => tile.toJson()).toList(),
+      'players': state.players.map(_playerToJson).toList(),
+      'gameMode': state.gameMode.name,
+      'setup': state.setup.toJson(),
+      'currentPlayerIndex': state.currentPlayerIndex,
+      'turnCount': state.turnCount,
+      'activeRules': state.activeRules.map((r) => r.toJson()).toList(),
+      'logEntries': state.logEntries.map((e) => e.toJson()).toList(),
+      'deck': state.deck.map((t) => t.toJson()).toList(),
     });
     await prefs.setString(_savedGameKey, payload);
   }
@@ -52,45 +41,45 @@ class GameStorage {
     final raw = prefs.getString(_savedGameKey);
     if (raw == null || raw.isEmpty) return null;
 
-    final decoded = jsonDecode(raw) as Map<String, dynamic>;
-    final stateJson = decoded['state'] as Map<String, dynamic>;
-    final tilesJson = decoded['tiles'] as List<dynamic>? ?? const [];
+    try {
+      final json = jsonDecode(raw) as Map<String, dynamic>;
 
-    final players = (stateJson['players'] as List<dynamic>? ?? const [])
-        .map((item) => _playerFromJson(item as Map<String, dynamic>))
-        .toList();
-    final activeRules = (stateJson['activeRules'] as List<dynamic>? ?? const [])
-        .map((item) => ActiveRule.fromJson(item as Map<String, dynamic>))
-        .toList();
-    final logEntries = (stateJson['logEntries'] as List<dynamic>? ?? const [])
-        .map((item) => GameLogEntry.fromJson(item as Map<String, dynamic>))
-        .toList();
-    final tiles = tilesJson
-        .map((item) => Tile.fromJson(item as Map<String, dynamic>))
-        .toList();
+      final players = (json['players'] as List<dynamic>? ?? [])
+          .map((item) => _playerFromJson(item as Map<String, dynamic>))
+          .toList();
+      final activeRules = (json['activeRules'] as List<dynamic>? ?? [])
+          .map((item) => ActiveRule.fromJson(item as Map<String, dynamic>))
+          .toList();
+      final logEntries = (json['logEntries'] as List<dynamic>? ?? [])
+          .map((item) => GameLogEntry.fromJson(item as Map<String, dynamic>))
+          .toList();
+      final deck = (json['deck'] as List<dynamic>? ?? [])
+          .map((item) => Tile.fromJson(item as Map<String, dynamic>))
+          .toList();
 
-    final modeName = stateJson['gameMode'] as String? ?? GameMode.light.name;
-    final mode = GameMode.values.firstWhere(
-      (value) => value.name == modeName,
-      orElse: () => GameMode.light,
-    );
+      final modeName = json['gameMode'] as String? ?? GameMode.light.name;
+      final mode = GameMode.values.firstWhere(
+        (v) => v.name == modeName,
+        orElse: () => GameMode.light,
+      );
 
-    return SavedGameData(
-      state: GameState(
-        players: players,
-        gameMode: mode,
-        setup: GameSetup.fromJson(
-            stateJson['setup'] as Map<String, dynamic>? ?? const {}),
-        currentPlayerIndex: stateJson['currentPlayerIndex'] as int? ?? 0,
-        lastDiceRoll: stateJson['lastDiceRoll'] as int?,
-        waitingForNextTurn: stateJson['waitingForNextTurn'] as bool? ?? false,
-        isGameOver: stateJson['isGameOver'] as bool? ?? false,
-        turnCount: stateJson['turnCount'] as int? ?? 0,
-        activeRules: activeRules,
-        logEntries: logEntries,
-      ),
-      tiles: tiles,
-    );
+      return SavedGameData(
+        state: GameState(
+          players: players,
+          gameMode: mode,
+          setup: GameSetup.fromJson(json['setup'] as Map<String, dynamic>? ?? {}),
+          currentPlayerIndex: json['currentPlayerIndex'] as int? ?? 0,
+          turnCount: json['turnCount'] as int? ?? 0,
+          activeRules: activeRules,
+          logEntries: logEntries,
+          deck: deck,
+        ),
+      );
+    } catch (_) {
+      // Incompatible save format — clear it
+      await clearSavedGame();
+      return null;
+    }
   }
 
   Future<bool> hasSavedGame() async {
@@ -103,33 +92,49 @@ class GameStorage {
     await prefs.remove(_savedGameKey);
   }
 
-  Future<void> addCompletedGame(GameSummary summary) async {
+  // ── Player roster ──────────────────────────────────────────────────────────
+
+  Future<List<Player>> loadRoster() async {
     final prefs = await SharedPreferences.getInstance();
-    final current = prefs.getStringList(_statsKey) ?? <String>[];
-    final updated = [
-      jsonEncode(summary.toJson()),
-      ...current,
-    ].take(12).toList();
-    await prefs.setStringList(_statsKey, updated);
+    final raw = prefs.getString(_rosterKey);
+    if (raw == null || raw.isEmpty) return [];
+    try {
+      final list = jsonDecode(raw) as List<dynamic>;
+      return list.map((item) => _playerFromJson(item as Map<String, dynamic>)).toList();
+    } catch (_) {
+      return [];
+    }
   }
 
-  Future<List<GameSummary>> loadCompletedGames() async {
+  Future<void> _saveRoster(List<Player> players) async {
     final prefs = await SharedPreferences.getInstance();
-    final current = prefs.getStringList(_statsKey) ?? <String>[];
-    return current
-        .map((item) =>
-            GameSummary.fromJson(jsonDecode(item) as Map<String, dynamic>))
-        .toList();
+    await prefs.setString(_rosterKey, jsonEncode(players.map(_playerToJson).toList()));
   }
+
+  Future<void> upsertPlayerInRoster(Player player) async {
+    final roster = await loadRoster();
+    final idx = roster.indexWhere((p) => p.name.toLowerCase() == player.name.toLowerCase());
+    if (idx >= 0) {
+      roster[idx] = player;
+    } else {
+      roster.add(player);
+    }
+    await _saveRoster(roster);
+  }
+
+  Future<void> removePlayerFromRoster(String name) async {
+    final roster = await loadRoster();
+    roster.removeWhere((p) => p.name.toLowerCase() == name.toLowerCase());
+    await _saveRoster(roster);
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
 
   Map<String, dynamic> _playerToJson(Player player) => {
         'name': player.name,
         'color': player.color.toARGB32(),
-        'position': player.position,
         'drinksConsumed': player.drinksConsumed,
-        'avatarBytes': player.avatarBytes == null
-            ? null
-            : base64Encode(player.avatarBytes!),
+        'avatarBytes': player.avatarBytes == null ? null : base64Encode(player.avatarBytes!),
       };
 
   Player _playerFromJson(Map<String, dynamic> json) {
@@ -138,11 +143,9 @@ class GameStorage {
     if (avatarRaw is String && avatarRaw.isNotEmpty) {
       avatarBytes = base64Decode(avatarRaw);
     }
-
     return Player(
       name: json['name'] as String? ?? '',
       color: Color(json['color'] as int? ?? 0xFFFFFFFF),
-      position: json['position'] as int? ?? 0,
       drinksConsumed: json['drinksConsumed'] as int? ?? 0,
       avatarBytes: avatarBytes,
     );

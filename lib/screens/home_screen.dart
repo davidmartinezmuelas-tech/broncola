@@ -71,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 10),
                 const Text(
-                  'Tablero largo, piques rápidos y una sola pantalla para todo el grupo.',
+                  'El juego de mesa que destroza amistades y llena copas.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white70, fontSize: 15, height: 1.4),
                 ),

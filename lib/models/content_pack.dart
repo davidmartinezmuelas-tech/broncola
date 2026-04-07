@@ -1,11 +1,10 @@
 enum ContentPack {
   base,
   exToxico,
+  broncolaPlus,
+  verguenzaAjena,
+  caosTotal,
   amigos,
-  // Próximos packs:
-  // broncolaPlus,
-  // verguenzaAjena,
-  // caosTotal,
 }
 
 extension ContentPackInfo on ContentPack {
@@ -15,6 +14,12 @@ extension ContentPackInfo on ContentPack {
         return 'Base';
       case ContentPack.exToxico:
         return 'Ex Tóxico';
+      case ContentPack.broncolaPlus:
+        return 'Broncola+';
+      case ContentPack.verguenzaAjena:
+        return 'Vergüenza Ajena';
+      case ContentPack.caosTotal:
+        return 'Caos Total';
       case ContentPack.amigos:
         return 'Amigos';
     }
@@ -26,6 +31,12 @@ extension ContentPackInfo on ContentPack {
         return 'Contenido gratuito incluido en Broncola.';
       case ContentPack.exToxico:
         return 'Ese pack que saca lo peor de tus relaciones pasadas. Confesiones incómodas, decisiones cuestionables y verdades que no querías decir.';
+      case ContentPack.broncolaPlus:
+        return 'Dinero, trabajo, ambición y vida adulta. Preguntas que nadie hace en la oficina pero todos quieren responder.';
+      case ContentPack.verguenzaAjena:
+        return 'Momentos bochornosos, fases cringe y fallos sociales épicos. Para los que disfrutan del sufrimiento ajeno.';
+      case ContentPack.caosTotal:
+        return 'Decisiones impulsivas, retos absurdos y anarquía pura. El pack para cuando la noche ya no tiene remedio.';
       case ContentPack.amigos:
         return 'Pack privado.';
     }
@@ -37,6 +48,12 @@ extension ContentPackInfo on ContentPack {
         return '🎮';
       case ContentPack.exToxico:
         return '💔';
+      case ContentPack.broncolaPlus:
+        return '💼';
+      case ContentPack.verguenzaAjena:
+        return '😬';
+      case ContentPack.caosTotal:
+        return '🔥';
       case ContentPack.amigos:
         return '👥';
     }

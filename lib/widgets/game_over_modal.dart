@@ -1,23 +1,18 @@
 import 'package:flutter/material.dart';
 
 import '../models/active_rule.dart';
-import '../models/game_log_entry.dart';
 import '../models/player.dart';
 
 class GameOverModal extends StatefulWidget {
-  final String playerName;
-  final List<ActiveRule> activeRules;
   final List<Player> ranking;
-  final List<GameLogEntry> highlights;
+  final List<ActiveRule> activeRules;
   final VoidCallback onRestart;
   final VoidCallback onHome;
 
   const GameOverModal({
     super.key,
-    required this.playerName,
-    required this.activeRules,
     required this.ranking,
-    required this.highlights,
+    required this.activeRules,
     required this.onRestart,
     required this.onHome,
   });
@@ -36,16 +31,12 @@ class _GameOverModalState extends State<GameOverModal> with TickerProviderStateM
   @override
   void initState() {
     super.initState();
-
     _headerController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     _headerScale = CurvedAnimation(parent: _headerController, curve: Curves.elasticOut);
-
-    final count = widget.ranking.length;
     _rowControllers = List.generate(
-      count,
+      widget.ranking.length,
       (i) => AnimationController(vsync: this, duration: const Duration(milliseconds: 420)),
     );
-
     _startSequence();
   }
 
@@ -63,14 +54,14 @@ class _GameOverModalState extends State<GameOverModal> with TickerProviderStateM
   @override
   void dispose() {
     _headerController.dispose();
-    for (final c in _rowControllers) {
-      c.dispose();
-    }
+    for (final c in _rowControllers) c.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final topDrinker = widget.ranking.isNotEmpty ? widget.ranking.first : null;
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       backgroundColor: Colors.transparent,
@@ -90,47 +81,41 @@ class _GameOverModalState extends State<GameOverModal> with TickerProviderStateM
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Animated header
               ScaleTransition(
                 scale: _headerScale,
                 child: Column(
                   children: [
-                    const Center(child: Text('🏆', style: TextStyle(fontSize: 60))),
+                    const Center(child: Text('🌙', style: TextStyle(fontSize: 60))),
                     const SizedBox(height: 8),
                     const Center(
                       child: Text(
-                        'BRONCOLA FINAL',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1.6,
-                        ),
+                        'FIN DE LA NOCHE',
+                        style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: 1.6),
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Center(
-                      child: Text(
-                        '${widget.playerName} llegó primero a meta',
-                        style: const TextStyle(color: Colors.white70),
+                    if (topDrinker != null)
+                      Center(
+                        child: Text(
+                          '${topDrinker.name} se lleva el premio a la resistencia 🏆',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white70),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
-              const Text('Podio', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17)),
+              const Text('Tabla de tragos', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17)),
               const SizedBox(height: 10),
-              // Animated podium rows
               ...widget.ranking.asMap().entries.map((entry) {
                 final rank = entry.key;
                 final player = entry.value;
                 final medal = rank < _medals.length ? _medals[rank] : '  ${rank + 1}.';
                 final controller = _rowControllers[rank];
                 return SlideTransition(
-                  position: Tween<Offset>(begin: const Offset(-0.6, 0), end: Offset.zero).animate(
-                    CurvedAnimation(parent: controller, curve: Curves.easeOutCubic),
-                  ),
+                  position: Tween<Offset>(begin: const Offset(-0.6, 0), end: Offset.zero)
+                      .animate(CurvedAnimation(parent: controller, curve: Curves.easeOutCubic)),
                   child: FadeTransition(
                     opacity: controller,
                     child: Container(
@@ -184,19 +169,8 @@ class _GameOverModalState extends State<GameOverModal> with TickerProviderStateM
                   ),
                 );
               }),
-              if (widget.highlights.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                const Text('Momentos destacados', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17)),
-                const SizedBox(height: 10),
-                ...widget.highlights.map(
-                  (entry) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Text(' ${entry.detail}', style: const TextStyle(color: Colors.white70, height: 1.3)),
-                  ),
-                ),
-              ],
               if (widget.activeRules.isNotEmpty) ...[
-                const SizedBox(height: 14),
+                const SizedBox(height: 16),
                 const Text('Reglas activas al cierre', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17)),
                 const SizedBox(height: 10),
                 ...widget.activeRules.map(

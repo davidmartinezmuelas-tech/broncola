@@ -43,6 +43,7 @@ class EventModal extends StatelessWidget {
   Widget build(BuildContext context) {
     final config = _tileConfig(tile.type, isCustom: tile.isCustom);
     final category = tile.category == null ? null : _categoryLabel(tile.category!);
+    final trimmedDetail = detail.trim();
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       backgroundColor: Colors.transparent,
@@ -76,8 +77,10 @@ class EventModal extends StatelessWidget {
               child: Column(
                 children: [
                   Text(tile.text, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 18, height: 1.35)),
-                  const SizedBox(height: 10),
-                  Text(detail, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.35)),
+                  if (trimmedDetail.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Text(trimmedDetail, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white60, fontSize: 13, height: 1.35)),
+                  ],
                 ],
               ),
             ),
@@ -95,7 +98,7 @@ class EventModal extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-                child: Text(isRollAgain ? '🎲  Volver a tirar' : 'Siguiente turno', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                child: Text(isRollAgain ? '🃏  Robar otra carta' : 'Siguiente turno', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ),
           ],
@@ -114,6 +117,8 @@ class EventModal extends StatelessWidget {
         return 'Nunca nunca';
       case TileCategory.actOut:
         return 'Imitación / actuación';
+      case TileCategory.whoIsMostLikely:
+        return '¿Quién es más probable?';
       case TileCategory.custom:
         return 'Casilla personalizada';
     }
@@ -151,4 +156,5 @@ _TileConfig _tileConfig(TileType type, {bool isCustom = false}) {
     case TileType.finale:
       return const _TileConfig(emoji: '🎉', label: 'FINAL', colorDark: Color(0xFF1A0050), colorLight: Color(0xFF7C3AED));
   }
-}
+}
+
