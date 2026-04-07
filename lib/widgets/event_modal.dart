@@ -117,6 +117,8 @@ class EventModal extends StatelessWidget {
         return 'Nunca nunca';
       case TileCategory.actOut:
         return 'Imitación / actuación';
+      case TileCategory.whoIsMostLikely:
+        return '¿Quién es más probable?';
       case TileCategory.custom:
         return 'Casilla personalizada';
     }

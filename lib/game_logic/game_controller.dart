@@ -80,7 +80,18 @@ class GameController {
             summary: 'Intercambiaste con ${selectedPlayer.name}: tú ahora tienes ${player.drinksConsumed} 🍺',
           );
 
-        default:
+        case SpecialTileEffect.moveBack3:
+          adjustDrinks(player, 3);
+          logEvent('Penalización', '${player.name} bebe 3 tragos extra.');
+          return TileActionResult(summary: '${player.name} bebe 3 tragos extra 🍺');
+
+        case SpecialTileEffect.moveForwardByLastRoll:
+          adjustDrinks(player, -2);
+          logEvent('Ventaja', '${player.name} se ahorra 2 tragos.');
+          return TileActionResult(summary: '${player.name} se ahorra 2 tragos 🎉');
+
+        case null:
+          logEvent('Turno de ${player.name}', card.text);
           return const TileActionResult(summary: '');
       }
     }
@@ -91,9 +102,10 @@ class GameController {
 
   void nextTurn() => state.advanceTurn();
 
-  void addRule(String text, String playerName) {
-    state.addRule(ActiveRule(text: text, createdBy: playerName));
+  ActiveRule? addRule(String text, String playerName) {
+    final discarded = state.addRule(ActiveRule(text: text, createdBy: playerName));
     logEvent('Regla nueva', '$playerName añadió la regla: $text');
+    return discarded;
   }
 
   void adjustDrinks(Player player, int delta) {

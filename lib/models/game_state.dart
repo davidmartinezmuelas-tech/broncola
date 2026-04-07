@@ -37,11 +37,13 @@ class GameState {
     turnCount++;
   }
 
-  void addRule(ActiveRule rule) {
+  ActiveRule? addRule(ActiveRule rule) {
+    ActiveRule? discarded;
     if (activeRules.length >= maxRules) {
-      activeRules.removeAt(0);
+      discarded = activeRules.removeAt(0);
     }
     activeRules.add(rule);
+    return discarded;
   }
 
   void addLog(GameLogEntry entry) {

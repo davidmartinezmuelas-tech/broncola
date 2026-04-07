@@ -9,7 +9,6 @@ import '../models/game_log_entry.dart';
 import '../models/game_mode.dart';
 import '../models/game_setup.dart';
 import '../models/game_state.dart';
-import '../models/game_summary.dart';
 import '../models/player.dart';
 import '../models/tile.dart';
 
@@ -20,7 +19,6 @@ class SavedGameData {
 
 class GameStorage {
   static const _savedGameKey = 'broncola_saved_game';
-  static const _statsKey = 'broncola_stats';
   static const _rosterKey = 'broncola_player_roster';
 
   Future<void> saveGame({required GameState state}) async {
@@ -92,21 +90,6 @@ class GameStorage {
   Future<void> clearSavedGame() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_savedGameKey);
-  }
-
-  Future<void> addCompletedGame(GameSummary summary) async {
-    final prefs = await SharedPreferences.getInstance();
-    final current = prefs.getStringList(_statsKey) ?? [];
-    final updated = [jsonEncode(summary.toJson()), ...current].take(12).toList();
-    await prefs.setStringList(_statsKey, updated);
-  }
-
-  Future<List<GameSummary>> loadCompletedGames() async {
-    final prefs = await SharedPreferences.getInstance();
-    final current = prefs.getStringList(_statsKey) ?? [];
-    return current
-        .map((item) => GameSummary.fromJson(jsonDecode(item) as Map<String, dynamic>))
-        .toList();
   }
 
   // ── Player roster ──────────────────────────────────────────────────────────

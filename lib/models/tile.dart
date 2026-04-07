@@ -3,7 +3,7 @@ import 'game_mode.dart';
 
 enum TileType { drink, groupDrink, social, rule, chaos, special, wildcard, finale }
 
-enum TileCategory { truth, dare, neverHaveIEver, actOut, custom }
+enum TileCategory { truth, dare, neverHaveIEver, actOut, whoIsMostLikely, custom }
 
 enum SpecialTileEffect { moveBack3, moveForwardByLastRoll, swapWithPlayer, rollAgain }
 

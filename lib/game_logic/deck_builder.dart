@@ -34,7 +34,7 @@ class DeckBuilder {
         all = [...TileCatalog.universal, ...TileCatalog.light, ...TileCatalog.spicy];
         break;
       case GameMode.wild:
-        all = [...TileCatalog.universal, ...TileCatalog.spicy, ...TileCatalog.wild];
+        all = [...TileCatalog.universal, ...TileCatalog.spicy, ...TileCatalog.wild, ...TileCatalog.wildExtra];
         break;
     }
     return all
@@ -51,6 +51,9 @@ class DeckBuilder {
 
     final allPackTiles = [
       ...TileCatalog.exToxico,
+      ...TileCatalog.broncolaPlus,
+      ...TileCatalog.verguenzaAjena,
+      ...TileCatalog.caosTotal,
       ...TileCatalog.amigos,
     ];
 

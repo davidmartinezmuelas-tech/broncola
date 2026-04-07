@@ -91,11 +91,17 @@ class _SetupScreenState extends State<SetupScreen> {
     if (source == null) return;
 
     try {
-      final file = await _picker.pickImage(source: source, maxWidth: 400, maxHeight: 400, imageQuality: 85);
+      final file = await _picker.pickImage(source: source, maxWidth: 250, maxHeight: 250, imageQuality: 75);
       if (file == null) return;
       final bytes = await file.readAsBytes();
       setState(() => _avatars[index] = bytes);
-    } catch (_) {}
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo cargar la imagen. Inténtalo de nuevo.')),
+        );
+      }
+    }
   }
 
   Future<ImageSource?> _showSourcePicker() {

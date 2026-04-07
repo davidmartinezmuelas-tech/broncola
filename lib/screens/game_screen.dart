@@ -40,6 +40,7 @@ class _GameScreenState extends State<GameScreen> {
   late final GameController _controller;
   final GameStorage _storage = GameStorage();
   bool _canDraw = true;
+  bool _gameOver = false;
 
   @override
   void initState() {
@@ -64,7 +65,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Future<void> _onDrawCard() async {
-    if (!_canDraw) return;
+    if (!_canDraw || _gameOver) return;
     setState(() => _canDraw = false);
 
     final card = _controller.drawCard();
@@ -131,7 +132,6 @@ class _GameScreenState extends State<GameScreen> {
               .map((p) => ListTile(
                     leading: CircleAvatar(backgroundColor: p.color),
                     title: Text(p.name, style: const TextStyle(color: Colors.white)),
-                    subtitle: Text('${p.drinksConsumed} 🍺', style: const TextStyle(color: Colors.white54)),
                     onTap: () => Navigator.of(context).pop(p),
                   ))
               .toList(),
@@ -149,7 +149,12 @@ class _GameScreenState extends State<GameScreen> {
         playerColor: player.color,
         onSave: (text) async {
           if (text != '(Sin regla)') {
-            _controller.addRule(text, player.name);
+            final discarded = _controller.addRule(text, player.name);
+            if (discarded != null && mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Regla eliminada: "${discarded.text}"')),
+              );
+            }
           }
           setState(() {
             _controller.nextTurn();
@@ -188,6 +193,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Future<void> _showEndGame() async {
+    setState(() => _gameOver = true);
     await _storage.clearSavedGame();
     if (!mounted) return;
     await showDialog(
@@ -207,104 +213,6 @@ class _GameScreenState extends State<GameScreen> {
           Navigator.of(context).pop();
           Navigator.of(context).popUntil((route) => route.isFirst);
         },
-      ),
-    );
-  }
-
-  void _showDrinksModal() {
-    final sorted = List<Player>.from(_controller.state.players)
-      ..sort((a, b) => b.drinksConsumed.compareTo(a.drinksConsumed));
-
-    showDialog(
-      context: context,
-      builder: (_) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: _palette.panel,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: _palette.accent.withValues(alpha: 0.4)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('🍺', style: TextStyle(fontSize: 36)),
-              const SizedBox(height: 8),
-              const Text('TRAGOS POR JUGADOR',
-                  style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: 1.5)),
-              const SizedBox(height: 16),
-              ...sorted.asMap().entries.map((entry) {
-                final rank = entry.key;
-                final player = entry.value;
-                final medal = rank == 0 ? '🥇' : rank == 1 ? '🥈' : rank == 2 ? '🥉' : '  ';
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: player.color.withValues(alpha: 0.4)),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(medal, style: const TextStyle(fontSize: 18)),
-                      const SizedBox(width: 8),
-                      CircleAvatar(
-                        backgroundColor: player.color,
-                        radius: 16,
-                        backgroundImage: player.avatarBytes != null ? MemoryImage(player.avatarBytes!) : null,
-                        child: player.avatarBytes == null
-                            ? Text(player.initials,
-                                style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))
-                            : null,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                          child: Text(player.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-                      // Manual adjust buttons
-                      _drinkButton(Icons.remove, () {
-                        setState(() => _controller.adjustDrinks(player, -1));
-                        _persistState();
-                        Navigator.of(context).pop();
-                        _showDrinksModal();
-                      }),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        child: Text('${player.drinksConsumed} 🍺',
-                            style: TextStyle(color: player.color, fontWeight: FontWeight.bold, fontSize: 14)),
-                      ),
-                      _drinkButton(Icons.add, () {
-                        setState(() => _controller.adjustDrinks(player, 1));
-                        _persistState();
-                        Navigator.of(context).pop();
-                        _showDrinksModal();
-                      }),
-                    ],
-                  ),
-                );
-              }),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('Cerrar', style: TextStyle(color: _palette.accentSoft, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _drinkButton(IconData icon, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        width: 28,
-        height: 28,
-        decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(10)),
-        child: Icon(icon, size: 16, color: Colors.white70),
       ),
     );
   }
@@ -332,11 +240,6 @@ class _GameScreenState extends State<GameScreen> {
           ],
         ),
         actions: [
-          IconButton(
-            onPressed: _showDrinksModal,
-            tooltip: 'Tragos',
-            icon: const Text('🍺', style: TextStyle(fontSize: 22)),
-          ),
           IconButton(
             onPressed: _showEndGameConfirm,
             tooltip: 'Terminar partida',
@@ -416,17 +319,6 @@ class _GameScreenState extends State<GameScreen> {
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: _palette.accent.withOpacity(0.18),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              '${current.drinksConsumed} 🍺',
-              style: TextStyle(color: _palette.accentSoft, fontWeight: FontWeight.w700, fontSize: 13),
-            ),
-          ),
         ],
       ),
     );
@@ -488,7 +380,7 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _playerStrip(GameState state) {
     return SizedBox(
-      height: 96,
+      height: 56,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -508,68 +400,27 @@ class _GameScreenState extends State<GameScreen> {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: isActive ? player.color : Colors.white12, width: isActive ? 1.5 : 1),
       ),
-      child: Column(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: player.color,
-                backgroundImage: player.avatarBytes != null ? MemoryImage(player.avatarBytes!) : null,
-                child: player.avatarBytes == null
-                    ? Text(player.initials,
-                        style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold))
-                    : null,
-              ),
-              const SizedBox(width: 7),
-              Text(player.name,
-                  style: TextStyle(
-                      color: isActive ? Colors.white : Colors.white70,
-                      fontSize: 12,
-                      fontWeight: isActive ? FontWeight.bold : FontWeight.normal)),
-            ],
+          CircleAvatar(
+            radius: 14,
+            backgroundColor: player.color,
+            backgroundImage: player.avatarBytes != null ? MemoryImage(player.avatarBytes!) : null,
+            child: player.avatarBytes == null
+                ? Text(player.initials,
+                    style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold))
+                : null,
           ),
-          const SizedBox(height: 6),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _chipDrinkButton(Icons.remove, () {
-                setState(() => _controller.adjustDrinks(player, -1));
-                _persistState();
-              }),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Text('${player.drinksConsumed} 🍺',
-                    style: TextStyle(
-                        color: isActive ? Colors.white : Colors.white54,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold)),
-              ),
-              _chipDrinkButton(Icons.add, () {
-                setState(() => _controller.adjustDrinks(player, 1));
-                _persistState();
-              }),
-            ],
-          ),
+          const SizedBox(width: 7),
+          Text(player.name,
+              style: TextStyle(
+                  color: isActive ? Colors.white : Colors.white70,
+                  fontSize: 12,
+                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal)),
         ],
       ),
     );
   }
 
-  Widget _chipDrinkButton(IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 24,
-        height: 24,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon, size: 14, color: Colors.white70),
-      ),
-    );
-  }
 }
