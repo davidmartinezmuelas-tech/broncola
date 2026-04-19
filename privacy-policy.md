@@ -15,6 +15,6 @@ La aplicación no muestra publicidad ni integra SDKs publicitarios.
 Esta aplicación está dirigida a mayores de 18 años. No recopilamos datos de menores.
 
 ## Contacto
-davidmartinezmuelas.tech@gmail.com
+davidmartinezmuelas@gmail.com
 
 *Última actualización: abril 2026*
