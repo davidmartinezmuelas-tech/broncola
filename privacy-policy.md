@@ -2,6 +2,9 @@
 
 Broncola es una aplicación de entretenimiento para grupos. No recopilamos ni almacenamos ningún dato personal en servidores externos.
 
+## Acceso a la cámara y galería
+La aplicación solicita acceso a la cámara y a la galería de imágenes únicamente para que los jugadores puedan añadir una foto de avatar a su perfil. Las imágenes se almacenan exclusivamente en el dispositivo. No se envían, comparten ni almacenan en servidores externos.
+
 ## Datos almacenados localmente
 Los nombres de jugadores, avatares y preferencias de juego se guardan únicamente en el dispositivo del usuario mediante almacenamiento local. Estos datos no salen del dispositivo y no son accesibles por el desarrollador.
 
