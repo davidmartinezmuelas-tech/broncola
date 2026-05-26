@@ -1,21 +1,18 @@
 # Broncola
 
-Flutter party game with dynamic card packs, player setup, photo avatars, and persistent local state.
+Flutter party game for groups. Players set up a roster, pick a content pack, and take turns drawing cards with questions, challenges, and social prompts.
 
-## Overview
-
-Broncola is a group party game built with Flutter. Players create a roster, choose a content pack, and take turns drawing cards with questions, challenges, and social prompts.
-
-The project focuses on a simple but complete mobile game loop: setup, player state, random card draws, pack-based content, avatar selection, and persistence between sessions.
+---
 
 ## Features
 
-- Dynamic card draw system with reusable question packs
-- Three included content packs with 49 cards each
-- Player roster setup before each game
-- Photo avatars from camera or gallery
-- Local persistence with SharedPreferences
-- Cross-platform Flutter codebase for Android, iOS, Web, Windows, macOS, and Linux
+- **3 content packs** — 49 cards each, drawn dynamically so no two games feel the same
+- **Player roster** — set up players before the game with names and photo avatars
+- **Photo avatars** — pick from camera or gallery using `image_picker`
+- **Persistent roster** — player profiles survive app restarts via `SharedPreferences`
+- **Cross-platform** — Android, iOS, Web, Windows, macOS, Linux from one codebase
+
+---
 
 ## Tech Stack
 
@@ -23,36 +20,46 @@ The project focuses on a simple but complete mobile game loop: setup, player sta
 |---|---|
 | Framework | Flutter |
 | Language | Dart |
-| Local storage | SharedPreferences |
-| Media input | image_picker |
-| Quality | flutter_lints |
+| Local storage | `shared_preferences` |
+| Photo input | `image_picker` |
+| Code quality | `flutter_lints` |
+
+---
 
 ## Getting Started
 
 ```bash
+git clone https://github.com/davidmartinezmuelas-tech/broncola.git
+cd broncola
 flutter pub get
 flutter run
 ```
 
-Build an Android APK:
+Build a release APK for Android:
 
 ```bash
 flutter build apk --release
 ```
 
+**Requirements:** Flutter SDK ≥ 3.0.0
+
+---
+
 ## Project Structure
 
-```text
+```
 lib/
-  main.dart
-  models/
-  screens/
-  widgets/
+├── main.dart
+├── models/       # Player, Card, Pack data classes
+├── screens/      # Setup, Game, Results screens
+└── widgets/      # Reusable UI components
 
 assets/
-  images/
+└── images/       # Logo and branding assets
 ```
+
+---
 
 ## Privacy
 
-Broncola stores player data locally on the device. Player photos are not uploaded to any server.
+All player data is stored locally on the device. Photos are never uploaded to any server. See [privacy-policy.md](privacy-policy.md) for full details.
