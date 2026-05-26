@@ -1,17 +1,58 @@
-# broncola
+# Broncola
 
-A new Flutter project.
+Flutter party game with dynamic card packs, player setup, photo avatars, and persistent local state.
+
+## Overview
+
+Broncola is a group party game built with Flutter. Players create a roster, choose a content pack, and take turns drawing cards with questions, challenges, and social prompts.
+
+The project focuses on a simple but complete mobile game loop: setup, player state, random card draws, pack-based content, avatar selection, and persistence between sessions.
+
+## Features
+
+- Dynamic card draw system with reusable question packs
+- Three included content packs with 49 cards each
+- Player roster setup before each game
+- Photo avatars from camera or gallery
+- Local persistence with SharedPreferences
+- Cross-platform Flutter codebase for Android, iOS, Web, Windows, macOS, and Linux
+
+## Tech Stack
+
+| Area | Technology |
+|---|---|
+| Framework | Flutter |
+| Language | Dart |
+| Local storage | SharedPreferences |
+| Media input | image_picker |
+| Quality | flutter_lints |
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+```bash
+flutter pub get
+flutter run
+```
 
-A few resources to get you started if this is your first Flutter project:
+Build an Android APK:
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```bash
+flutter build apk --release
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Project Structure
+
+```text
+lib/
+  main.dart
+  models/
+  screens/
+  widgets/
+
+assets/
+  images/
+```
+
+## Privacy
+
+Broncola stores player data locally on the device. Player photos are not uploaded to any server.
